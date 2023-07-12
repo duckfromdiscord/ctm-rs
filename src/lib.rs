@@ -39,6 +39,10 @@ pub fn read_value(content: &Vec<u8>, position: &mut usize, count: usize) -> Vec<
     result
 }
 
+fn read_value_fixed<const N: usize>(content: &Vec<u8>, position: &mut usize, count: usize) -> [u8; N] {
+    return read_value(&content, position, N)[0..=N-1].try_into().unwrap();
+}
+
 pub fn from_vec(content: Vec<u8>) -> Result<CTM, String> {
     let mut position: usize = 0;
     let magic = read_value(&content, &mut position, 4);
@@ -47,23 +51,23 @@ pub fn from_vec(content: Vec<u8>) -> Result<CTM, String> {
     }
     let mut ctm: CTM = CTM::default();
 
-    let mut title_id: [u8; 8] = read_value(&content, &mut position, 8)[0..=7].try_into().unwrap();
+    let mut title_id: [u8; 8] = read_value_fixed(&content, &mut position, 8);
     title_id.reverse();
 
-    let git_hash: [u8; 20] = read_value(&content, &mut position, 20)[0..=19].try_into().unwrap();
+    let git_hash: [u8; 20] = read_value_fixed(&content, &mut position, 20);
 
     let init_time = i64::from_le_bytes(
-                            read_value(&content, &mut position, 8)[0..=7].try_into().unwrap()
+                            read_value_fixed(&content, &mut position, 8)
     );
     
     let init_time = NaiveDateTime::from_timestamp_opt(init_time, 0).unwrap();
     
-    let movie_id: [u8; 8] = read_value(&content, &mut position, 8)[0..=7].try_into().unwrap();
+    let movie_id: [u8; 8] = read_value_fixed(&content, &mut position, 8);
     let movie_id: u64 = u64::from_le_bytes(movie_id);
     
     let author: String = String::from_utf8(read_value(&content, &mut position, 32)).unwrap();
 
-    let rerecords: [u8; 4] = read_value(&content, &mut position, 4)[0..=3].try_into().unwrap();
+    let rerecords: [u8; 4] = read_value_fixed(&content, &mut position, 4);
     let rerecords: u32 = u32::from_le_bytes(rerecords);
 
     ctm.init_time = DateTime::from_utc(init_time, Utc);
