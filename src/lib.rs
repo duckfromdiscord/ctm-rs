@@ -1,5 +1,9 @@
 use chrono::{DateTime, Utc, NaiveDateTime};
 
+
+// https://github.com/benstephens56/Citra-Movie-File-Parser/blob/main/CTM%20Template.bt#L61
+const FPS: f64 = 59.83122493939037;
+
 #[derive(Debug, Clone)]
 pub struct CTM {
     pub title_id: String,
@@ -10,7 +14,6 @@ pub struct CTM {
     pub rerecords: u32,
     pub frames: u64,
     pub inputs: u64,
-    pub u64_time: u64,
 }
 
 impl Default for CTM {
@@ -24,7 +27,6 @@ impl Default for CTM {
             rerecords: 0,
             frames: 0,
             inputs: 0,
-            u64_time: 0,
         }
     }
 }
@@ -70,12 +72,18 @@ pub fn from_vec(content: Vec<u8>) -> Result<CTM, String> {
     let rerecords: [u8; 4] = read_value_fixed(&content, &mut position);
     let rerecords: u32 = u32::from_le_bytes(rerecords);
 
+    let inputs: [u8; 8] = read_value_fixed(&content, &mut position);
+    let inputs: u64 = u64::from_le_bytes(inputs);
+
+
     ctm.init_time = DateTime::from_utc(init_time, Utc);
     ctm.title_id = hex::encode(title_id);
     ctm.git_hash = hex::encode(git_hash);
     ctm.author = author;
     ctm.movie_id = movie_id;
     ctm.rerecords = rerecords;
+    ctm.inputs = inputs;
+    ctm.frames = f64::floor( ctm.inputs as f64 / (234.0 / FPS) ) as u64;
 
 
     return Ok(ctm);
